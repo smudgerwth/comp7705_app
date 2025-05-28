@@ -45,7 +45,6 @@ class HealthKitManager: ObservableObject {
         
         let typesToRead: Set = [stepCount, heartRate, restingHeartRate, activeEnergy, bodyWeight, bmi, sleepAnalysis, biologicalSex, dateOfBirth]
         
-        // Check authorization status
         let status = healthStore.authorizationStatus(for: stepCount)
         DispatchQueue.main.async {
             if status == .sharingAuthorized {
