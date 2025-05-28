@@ -1,31 +1,29 @@
-//
-//  HealthKitManager.swift
-//  AI Insurance
-//
-//  Created by Aidan Wong on 28/5/2025.
-//
-
 import HealthKit
 import SwiftUI
+import os.log
 
 class HealthKitManager: ObservableObject {
     private let healthStore = HKHealthStore()
     @Published var isAuthorized = false
-    @Published var stepCount: Double? // Steps
-    @Published var heartRate: Double? // Beats per minute
-    @Published var restingHeartRate: Double? // Beats per minute
-    @Published var activeEnergy: Double? // Calories
-    @Published var bodyWeight: Double? // Kilograms
-    @Published var bmi: Double? // BMI
-    @Published var sleepHours: Double? // Hours
-    @Published var biologicalSex: String? // Biological sex
-    @Published var age: Int? // Age in years
+    @Published var stepCount: Double?
+    @Published var heartRate: Double?
+    @Published var restingHeartRate: Double?
+    @Published var activeEnergy: Double?
+    @Published var bodyWeight: Double?
+    @Published var bmi: Double?
+    @Published var sleepHours: Double?
+    @Published var biologicalSex: String?
+    @Published var age: Int?
     @Published var errorMessage: String?
     
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.example.AIInsurance", category: "HealthKitManager")
+    
     func checkAuthorizationStatus() {
+        logger.info("Checking HealthKit authorization status")
+        
         guard HKHealthStore.isHealthDataAvailable() else {
             errorMessage = "HealthKit is not available on this device."
-            print(errorMessage!)
+            logger.error("\(self.errorMessage!)")
             return
         }
         
@@ -39,29 +37,71 @@ class HealthKitManager: ObservableObject {
               let biologicalSex = HKObjectType.characteristicType(forIdentifier: .biologicalSex),
               let dateOfBirth = HKObjectType.characteristicType(forIdentifier: .dateOfBirth) else {
             errorMessage = "One or more HealthKit types are unavailable."
-            print(errorMessage!)
+            logger.error("\(self.errorMessage!)")
             return
         }
         
         let typesToRead: Set = [stepCount, heartRate, restingHeartRate, activeEnergy, bodyWeight, bmi, sleepAnalysis, biologicalSex, dateOfBirth]
         
-        let status = healthStore.authorizationStatus(for: stepCount)
-        DispatchQueue.main.async {
+        // Log authorization status for all types
+        var hasAccess = false
+        for type in typesToRead {
+            let status = healthStore.authorizationStatus(for: type)
+            logger.debug("Authorization status for \(type.identifier): \(status.rawValue) (\(status.description))")
             if status == .sharingAuthorized {
-                self.isAuthorized = true
-                print("HealthKit permission already granted.")
-                self.fetchAllData()
-            } else {
-                self.isAuthorized = false
-                print("HealthKit permission not granted. Awaiting user action.")
+                hasAccess = true
             }
+        }
+        
+        // Fallback: Check if critical data can be fetched
+        var fetchedCriticalData = false
+        
+        // Check biological sex access
+        do {
+            _ = try healthStore.biologicalSex()
+            fetchedCriticalData = true
+            logger.debug("Biological sex accessible")
+        } catch {
+            logger.debug("Biological sex not accessible: \(error.localizedDescription)")
+        }
+        
+        // Check date of birth access
+        do {
+            _ = try healthStore.dateOfBirthComponents()
+            fetchedCriticalData = true
+            logger.debug("Date of birth accessible")
+        } catch {
+            logger.debug("Date of birth not accessible: \(error.localizedDescription)")
+        }
+        
+        // Check BMI via sample query
+        if let bmiType = HKObjectType.quantityType(forIdentifier: .bodyMassIndex) {
+            let query = HKSampleQuery(sampleType: bmiType, predicate: nil, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
+                if let _ = samples?.first as? HKQuantitySample {
+                    DispatchQueue.main.async {
+                        self.logger.debug("BMI accessible")
+                        self.isAuthorized = true
+                    }
+                }
+            }
+            healthStore.execute(query)
+        }
+        
+        DispatchQueue.main.async {
+            // Set isAuthorized if any access is confirmed
+            self.isAuthorized = hasAccess || fetchedCriticalData
+            self.logger.info("HealthKit authorization state: isAuthorized=\(self.isAuthorized)")
+            // Always fetch data to load what's available
+            self.fetchAllData()
         }
     }
     
     func requestAuthorization() {
+        logger.info("Requesting HealthKit authorization")
+        
         guard HKHealthStore.isHealthDataAvailable() else {
             errorMessage = "HealthKit is not available on this device."
-            print(errorMessage!)
+            logger.error("\(self.errorMessage!)")
             return
         }
         
@@ -75,7 +115,7 @@ class HealthKitManager: ObservableObject {
               let biologicalSex = HKObjectType.characteristicType(forIdentifier: .biologicalSex),
               let dateOfBirth = HKObjectType.characteristicType(forIdentifier: .dateOfBirth) else {
             errorMessage = "One or more HealthKit types are unavailable."
-            print(errorMessage!)
+            logger.error("\(self.errorMessage!)")
             return
         }
         
@@ -85,17 +125,18 @@ class HealthKitManager: ObservableObject {
             DispatchQueue.main.async {
                 if success {
                     self.isAuthorized = true
-                    print("HealthKit authorization granted.")
+                    self.logger.info("HealthKit authorization granted")
                     self.fetchAllData()
                 } else {
                     self.errorMessage = error?.localizedDescription ?? "Authorization failed."
-                    print("HealthKit authorization failed: \(self.errorMessage!)")
+                    self.logger.error("HealthKit authorization failed: \(self.errorMessage!)")
                 }
             }
         }
     }
     
     func fetchAllData() {
+        logger.info("Fetching all HealthKit data")
         fetchStepCount()
         fetchHeartRate()
         fetchRestingHeartRate()
@@ -118,13 +159,13 @@ class HealthKitManager: ObservableObject {
         let query = HKStatisticsQuery(quantityType: stepType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    self.errorMessage = "Step count query failed: \(error.localizedDescription)"
-                    print(self.errorMessage!)
+                    self.logger.error("Step count query failed: \(error.localizedDescription)")
                     self.stepCount = nil
                     return
                 }
                 if let sum = result?.sumQuantity() {
                     self.stepCount = sum.doubleValue(for: HKUnit.count())
+                    self.logger.debug("Step count fetched: \(self.stepCount!)")
                 } else {
                     self.stepCount = nil
                 }
@@ -139,13 +180,13 @@ class HealthKitManager: ObservableObject {
         let query = HKSampleQuery(sampleType: heartRateType, predicate: nil, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    self.errorMessage = "Heart rate query failed: \(error.localizedDescription)"
-                    print(self.errorMessage!)
+                    self.logger.error("Heart rate query failed: \(error.localizedDescription)")
                     self.heartRate = nil
                     return
                 }
                 if let sample = samples?.first as? HKQuantitySample {
                     self.heartRate = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                    self.logger.debug("Heart rate fetched: \(self.heartRate!)")
                 } else {
                     self.heartRate = nil
                 }
@@ -160,13 +201,13 @@ class HealthKitManager: ObservableObject {
         let query = HKSampleQuery(sampleType: restingHeartRateType, predicate: nil, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    self.errorMessage = "Resting heart rate query failed: \(error.localizedDescription)"
-                    print(self.errorMessage!)
+                    self.logger.error("Resting heart rate query failed: \(error.localizedDescription)")
                     self.restingHeartRate = nil
                     return
                 }
                 if let sample = samples?.first as? HKQuantitySample {
                     self.restingHeartRate = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                    self.logger.debug("Resting heart rate fetched: \(self.restingHeartRate!)")
                 } else {
                     self.restingHeartRate = nil
                 }
@@ -186,13 +227,13 @@ class HealthKitManager: ObservableObject {
         let query = HKStatisticsQuery(quantityType: energyType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    self.errorMessage = "Active energy query failed: \(error.localizedDescription)"
-                    print(self.errorMessage!)
+                    self.logger.error("Active energy query failed: \(error.localizedDescription)")
                     self.activeEnergy = nil
                     return
                 }
                 if let sum = result?.sumQuantity() {
                     self.activeEnergy = sum.doubleValue(for: HKUnit.kilocalorie())
+                    self.logger.debug("Active energy fetched: \(self.activeEnergy!)")
                 } else {
                     self.activeEnergy = nil
                 }
@@ -207,13 +248,13 @@ class HealthKitManager: ObservableObject {
         let query = HKSampleQuery(sampleType: weightType, predicate: nil, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    self.errorMessage = "Body weight query failed: \(error.localizedDescription)"
-                    print(self.errorMessage!)
+                    self.logger.error("Body weight query failed: \(error.localizedDescription)")
                     self.bodyWeight = nil
                     return
                 }
                 if let sample = samples?.first as? HKQuantitySample {
                     self.bodyWeight = sample.quantity.doubleValue(for: HKUnit.gramUnit(with: .kilo))
+                    self.logger.debug("Body weight fetched: \(self.bodyWeight!)")
                 } else {
                     self.bodyWeight = nil
                 }
@@ -228,13 +269,13 @@ class HealthKitManager: ObservableObject {
         let query = HKSampleQuery(sampleType: bmiType, predicate: nil, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    self.errorMessage = "BMI query failed: \(error.localizedDescription)"
-                    print(self.errorMessage!)
+                    self.logger.error("BMI query failed: \(error.localizedDescription)")
                     self.bmi = nil
                     return
                 }
                 if let sample = samples?.first as? HKQuantitySample {
                     self.bmi = sample.quantity.doubleValue(for: HKUnit.count())
+                    self.logger.debug("BMI fetched: \(self.bmi!)")
                 } else {
                     self.bmi = nil
                 }
@@ -254,8 +295,7 @@ class HealthKitManager: ObservableObject {
         let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    self.errorMessage = "Sleep analysis query failed: \(error.localizedDescription)"
-                    print(self.errorMessage!)
+                    self.logger.error("Sleep analysis query failed: \(error.localizedDescription)")
                     self.sleepHours = nil
                     return
                 }
@@ -263,7 +303,8 @@ class HealthKitManager: ObservableObject {
                     guard let sample = sample as? HKCategorySample, sample.value == HKCategoryValueSleepAnalysis.asleep.rawValue else { return nil }
                     return sample.endDate.timeIntervalSince(sample.startDate)
                 }.reduce(0, +) ?? 0
-                self.sleepHours = totalSleepSeconds / 3600 // Convert to hours
+                self.sleepHours = totalSleepSeconds / 3600
+                self.logger.debug("Sleep hours fetched: \(self.sleepHours!)")
             }
         }
         healthStore.execute(query)
@@ -280,11 +321,11 @@ class HealthKitManager: ObservableObject {
                 case .other: self.biologicalSex = "Other"
                 @unknown default: self.biologicalSex = "Unknown"
                 }
+                self.logger.debug("Biological sex fetched: \(self.biologicalSex ?? "nil")")
             }
         } catch {
             DispatchQueue.main.async {
-                self.errorMessage = "Biological sex query failed: \(error.localizedDescription)"
-                print(self.errorMessage!)
+                self.logger.error("Biological sex query failed: \(error.localizedDescription)")
                 self.biologicalSex = nil
             }
         }
@@ -299,6 +340,7 @@ class HealthKitManager: ObservableObject {
                 let ageComponents = calendar.dateComponents([.year], from: birthDate, to: now)
                 DispatchQueue.main.async {
                     self.age = ageComponents.year
+                    self.logger.debug("Age fetched: \(self.age!)")
                 }
             } else {
                 DispatchQueue.main.async {
@@ -307,10 +349,20 @@ class HealthKitManager: ObservableObject {
             }
         } catch {
             DispatchQueue.main.async {
-                self.errorMessage = "Date of birth query failed: \(error.localizedDescription)"
-                print(self.errorMessage!)
+                self.logger.error("Date of birth query failed: \(error.localizedDescription)")
                 self.age = nil
             }
+        }
+    }
+}
+
+extension HKAuthorizationStatus {
+    var description: String {
+        switch self {
+        case .notDetermined: return "Not Determined"
+        case .sharingDenied: return "Sharing Denied"
+        case .sharingAuthorized: return "Sharing Authorized"
+        @unknown default: return "Unknown"
         }
     }
 }

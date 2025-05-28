@@ -22,7 +22,7 @@ struct ContentView: View {
                 Text("AI Insurance")
                     .font(.largeTitle)
                     .padding()
-                
+
                 if !healthKitManager.isAuthorized {
                     Button(action: {
                         if HKHealthStore.isHealthDataAvailable() {
