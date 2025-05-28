@@ -397,9 +397,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"AI Insurance/Preview Content\"";
+				DEVELOPMENT_TEAM = 6M8B99W3MK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "AI-Insurance-Info.plist";
+				INFOPLIST_FILE = "AI Insurance/AI_Insurance-Info.plist";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need access to your health data, including steps, heart rate, weight, and sleep, to personalize your insurance plan and promote wellness.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We may write health data to HealthKit to track your progress for your insurance plan.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -429,9 +430,10 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"AI Insurance/Preview Content\"";
+				DEVELOPMENT_TEAM = 6M8B99W3MK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "AI-Insurance-Info.plist";
+				INFOPLIST_FILE = "AI Insurance/AI_Insurance-Info.plist";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "We need access to your health data, including steps, heart rate, weight, and sleep, to personalize your insurance plan and promote wellness.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "We may write health data to HealthKit to track your progress for your insurance plan.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
