@@ -11,10 +11,11 @@ import HealthKit
 struct ContentView: View {
     @StateObject private var healthKitManager = HealthKitManager()
     @State private var isSmoker = false
-    @State private var showHealthKitError = false
+    @State private var showHealthKitError = false // Used for HealthKit specific errors or general alerts
     @State private var insurancePrediction: InsurancePrediction?
     @State private var isLoading = false // Loading state for server request
-    @State private var serverError: String? // Server error message
+    @State private var serverError: String? // To display error messages in the alert
+    private let apiManager = APIManager.shared
     
     var body: some View {
         NavigationView {
@@ -28,7 +29,9 @@ struct ContentView: View {
                         if HKHealthStore.isHealthDataAvailable() {
                             healthKitManager.requestAuthorization()
                         } else {
-                            showHealthKitError = true
+                            // This error is specific to HealthKit availability on device
+                            self.serverError = "HealthKit is not available on this device."
+                            self.showHealthKitError = true
                         }
                     }) {
                         Text("Request HealthKit Permission")
@@ -95,7 +98,7 @@ struct ContentView: View {
                                 }
                                 .padding(.vertical, 4)
                             }
-                                                }
+                        }
                     }
                     .listStyle(GroupedListStyle())
                 }
@@ -104,7 +107,7 @@ struct ContentView: View {
                     .padding(.horizontal)
                 
                 Button(action: {
-                    submitToServer()
+                    submitToServerWithAPIManager() // Call the refactored method
                 }) {
                     Text(isLoading ? "Submitting..." : "Submit")
                         .font(.headline)
@@ -114,7 +117,7 @@ struct ContentView: View {
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
-                .disabled(isLoading)
+                .disabled(isLoading || !healthKitManager.isAuthorized) // Also disable if HealthKit not authorized
                 .padding(.horizontal)
                 
                 Spacer()
@@ -126,8 +129,13 @@ struct ContentView: View {
             .alert(isPresented: $showHealthKitError) {
                 Alert(
                     title: Text("Error"),
-                    message: Text(healthKitManager.errorMessage ?? serverError ?? "An error occurred."),
-                    dismissButton: .default(Text("OK"))
+                    // Display HealthKitManager's error first if available, then serverError.
+                    message: Text(healthKitManager.errorMessage ?? serverError ?? "An unknown error occurred."),
+                    dismissButton: .default(Text("OK")) {
+                        // Reset errors when alert is dismissed
+                        healthKitManager.errorMessage = nil
+                        serverError = nil
+                    }
                 )
             }
             .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
@@ -149,16 +157,17 @@ struct ContentView: View {
         }
     }
     
-    private func submitToServer() {
+    // Renamed the submit function to reflect it's using APIManager
+    private func submitToServerWithAPIManager() {
         // Use HealthKit data if available, otherwise defaults
         let age = healthKitManager.age ?? 18
         let bmi = healthKitManager.bmi ?? 25.0
         let sexString = healthKitManager.biologicalSex?.lowercased()
-        let sex: Int = (sexString == "female") ? 1 : 0 // Default to 1 (female) if unavailable
+        let sex: Int = (sexString == "female") ? 1 : 0 // Default to 0 (male) as per original logic (or 1 for female)
         let smoker: Int = isSmoker ? 1 : 0
-        let heartRate = healthKitManager.heartRate ?? 70
-        let steps = healthKitManager.stepCount ?? 10000
-        
+        let heartRate = healthKitManager.heartRate ?? 70.0 // Using Double for consistency with payload if needed
+        let steps = healthKitManager.stepCount ?? 10000.0 // Using Double
+
         // Prepare JSON payload
         let payload: [String: Any] = [
             "age": age,
@@ -169,68 +178,43 @@ struct ContentView: View {
             "steps": steps
         ]
         
-        guard let url = URL(string: "http://127.0.0.1:5050/predict") else {
-            serverError = "Invalid server URL."
-            showHealthKitError = true
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-        } catch {
-            serverError = "Failed to encode JSON: \(error.localizedDescription)"
-            showHealthKitError = true
-            return
-        }
-        
         isLoading = true
-        insurancePrediction = nil
-        serverError = nil
-        
-        URLSession.shared.dataTask(with: request) { data, response, error in
+        insurancePrediction = nil // Clear previous prediction
+        serverError = nil         // Clear previous server error
+        healthKitManager.errorMessage = nil // Clear HealthKit error too
+
+        apiManager.fetchInsurancePrediction(payload: payload) { result in
             DispatchQueue.main.async {
                 self.isLoading = false
-                
-                if let error = error {
-                    self.serverError = "Server request failed: \(error.localizedDescription)"
-                    self.showHealthKitError = true
-                    return
-                }
-                
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    self.serverError = "Invalid server response"
-                    self.showHealthKitError = true
-                    return
-                }
-                
-                guard (200...299).contains(httpResponse.statusCode) else {
-                    // ... [keep your existing error handling] ...
-                    return
-                }
-                
-                guard let data = data else {
-                    self.serverError = "No data received from server"
-                    self.showHealthKitError = true
-                    return
-                }
-                
-                do {
-                    let decoder = JSONDecoder()
-                    let prediction = try decoder.decode(InsurancePrediction.self, from: data)
+                switch result {
+                case .success(let prediction):
                     self.insurancePrediction = prediction
-                } catch {
-                    self.serverError = "Failed to parse response: \(error.localizedDescription)"
-                    self.showHealthKitError = true
+                case .failure(let error):
+                    self.serverError = error.localizedDescription // Use localizedDescription from APIError
+                    self.showHealthKitError = true // Re-use this state to show the alert
+                    
+                    // For debugging specific API errors:
+                    if let apiErr = error as? APIError {
+                        switch apiErr {
+                        case .decodingFailed(_, let data):
+                            if let data = data, let text = String(data: data, encoding: .utf8) {
+                                print("Decoding failed. Received data: \(text)")
+                            }
+                        case .httpError(_, let data):
+                            if let data = data, let text = String(data: data, encoding: .utf8) {
+                                print("HTTP error. Received data: \(text)")
+                            }
+                        default:
+                            break
+                        }
+                    }
                 }
             }
-        }.resume()
+        }
     }
 }
 
+// HealthDataRow struct remains the same
 struct HealthDataRow: View {
     let label: String
     let value: Double?

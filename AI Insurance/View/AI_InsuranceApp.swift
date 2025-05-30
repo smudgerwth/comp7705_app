@@ -9,6 +9,12 @@ import SwiftUI
 
 @main
 struct AI_InsuranceApp: App {
+    
+    init() {
+        _ = PhoneWCSessionManager.shared
+        print("AI_InsuranceApp: PhoneWCSessionManager shared instance initialized.")
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()

@@ -4,6 +4,7 @@
 //
 //  Created by Chuen on 30/5/2025.
 //
+import SwiftUI
 
 struct InsurancePrediction: Codable {
     let base_premium: Double

@@ -6,7 +6,18 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		52AF94AA2DE9B6EF00F1DBF6 /* AI Insurance Watch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 52AF94A02DE9B6EE00F1DBF6 /* AI Insurance Watch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		52AF94A82DE9B6EF00F1DBF6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DDCA34DE2DE6EDF3002837F7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 52AF949F2DE9B6EE00F1DBF6;
+			remoteInfo = "AI Insurance Watch Watch App";
+		};
 		DDCA34F72DE6EDF5002837F7 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = DDCA34DE2DE6EDF3002837F7 /* Project object */;
@@ -23,15 +34,50 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		52AF94AE2DE9B6EF00F1DBF6 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				52AF94AA2DE9B6EF00F1DBF6 /* AI Insurance Watch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		52AF94A02DE9B6EE00F1DBF6 /* AI Insurance Watch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "AI Insurance Watch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDCA34E62DE6EDF3002837F7 /* AI Insurance.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "AI Insurance.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDCA34F62DE6EDF5002837F7 /* AI InsuranceTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "AI InsuranceTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDCA35002DE6EDF5002837F7 /* AI InsuranceUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "AI InsuranceUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		52AF94B02DE9C2C600F1DBF6 /* Exceptions for "AI Insurance" folder in "AI Insurance Watch Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"AI_Insurance-Info.plist",
+				ManagerHelper/HealthKitManager.swift,
+				Model/InsurancePrediction.swift,
+			);
+			target = 52AF949F2DE9B6EE00F1DBF6 /* AI Insurance Watch Watch App */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		52AF94A12DE9B6EE00F1DBF6 /* AI Insurance Watch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "AI Insurance Watch Watch App";
+			sourceTree = "<group>";
+		};
 		DDCA34E82DE6EDF3002837F7 /* AI Insurance */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				52AF94B02DE9C2C600F1DBF6 /* Exceptions for "AI Insurance" folder in "AI Insurance Watch Watch App" target */,
+			);
 			path = "AI Insurance";
 			sourceTree = "<group>";
 		};
@@ -48,6 +94,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		52AF949D2DE9B6EE00F1DBF6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DDCA34E32DE6EDF3002837F7 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -78,6 +131,7 @@
 				DDCA34E82DE6EDF3002837F7 /* AI Insurance */,
 				DDCA34F92DE6EDF5002837F7 /* AI InsuranceTests */,
 				DDCA35032DE6EDF5002837F7 /* AI InsuranceUITests */,
+				52AF94A12DE9B6EE00F1DBF6 /* AI Insurance Watch Watch App */,
 				DDCA34E72DE6EDF3002837F7 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -88,6 +142,7 @@
 				DDCA34E62DE6EDF3002837F7 /* AI Insurance.app */,
 				DDCA34F62DE6EDF5002837F7 /* AI InsuranceTests.xctest */,
 				DDCA35002DE6EDF5002837F7 /* AI InsuranceUITests.xctest */,
+				52AF94A02DE9B6EE00F1DBF6 /* AI Insurance Watch Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,6 +150,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		52AF949F2DE9B6EE00F1DBF6 /* AI Insurance Watch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 52AF94AB2DE9B6EF00F1DBF6 /* Build configuration list for PBXNativeTarget "AI Insurance Watch Watch App" */;
+			buildPhases = (
+				52AF949C2DE9B6EE00F1DBF6 /* Sources */,
+				52AF949D2DE9B6EE00F1DBF6 /* Frameworks */,
+				52AF949E2DE9B6EE00F1DBF6 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				52AF94A12DE9B6EE00F1DBF6 /* AI Insurance Watch Watch App */,
+			);
+			name = "AI Insurance Watch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "AI Insurance Watch Watch App";
+			productReference = 52AF94A02DE9B6EE00F1DBF6 /* AI Insurance Watch Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
 		DDCA34E52DE6EDF3002837F7 /* AI Insurance */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = DDCA350A2DE6EDF5002837F7 /* Build configuration list for PBXNativeTarget "AI Insurance" */;
@@ -102,10 +179,12 @@
 				DDCA34E22DE6EDF3002837F7 /* Sources */,
 				DDCA34E32DE6EDF3002837F7 /* Frameworks */,
 				DDCA34E42DE6EDF3002837F7 /* Resources */,
+				52AF94AE2DE9B6EF00F1DBF6 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				52AF94A92DE9B6EF00F1DBF6 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				DDCA34E82DE6EDF3002837F7 /* AI Insurance */,
@@ -170,9 +249,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1620;
+				LastSwiftUpdateCheck = 1640;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
+					52AF949F2DE9B6EE00F1DBF6 = {
+						CreatedOnToolsVersion = 16.4;
+					};
 					DDCA34E52DE6EDF3002837F7 = {
 						CreatedOnToolsVersion = 16.2;
 					};
@@ -203,11 +285,19 @@
 				DDCA34E52DE6EDF3002837F7 /* AI Insurance */,
 				DDCA34F52DE6EDF5002837F7 /* AI InsuranceTests */,
 				DDCA34FF2DE6EDF5002837F7 /* AI InsuranceUITests */,
+				52AF949F2DE9B6EE00F1DBF6 /* AI Insurance Watch Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		52AF949E2DE9B6EE00F1DBF6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DDCA34E42DE6EDF3002837F7 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -232,6 +322,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		52AF949C2DE9B6EE00F1DBF6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		DDCA34E22DE6EDF3002837F7 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -256,6 +353,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		52AF94A92DE9B6EF00F1DBF6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 52AF949F2DE9B6EE00F1DBF6 /* AI Insurance Watch Watch App */;
+			targetProxy = 52AF94A82DE9B6EF00F1DBF6 /* PBXContainerItemProxy */;
+		};
 		DDCA34F82DE6EDF5002837F7 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = DDCA34E52DE6EDF3002837F7 /* AI Insurance */;
@@ -269,6 +371,68 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		52AF94AC2DE9B6EF00F1DBF6 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "AI Insurance Watch Watch App/AI Insurance Watch Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = L62U4A5HST;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "AI Insurance Watch Watch App/AI_Insurance_Watch-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "AI Insurance Watch";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "comp7705.AI-Insurance-app";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "comp7705.AI-Insurance-app.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.5;
+			};
+			name = Debug;
+		};
+		52AF94AD2DE9B6EF00F1DBF6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "AI Insurance Watch Watch App/AI Insurance Watch Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = L62U4A5HST;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "AI Insurance Watch Watch App/AI_Insurance_Watch-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "AI Insurance Watch";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "comp7705.AI-Insurance-app";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "comp7705.AI-Insurance-app.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.5;
+			};
+			name = Release;
+		};
 		DDCA35082DE6EDF5002837F7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -531,6 +695,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		52AF94AB2DE9B6EF00F1DBF6 /* Build configuration list for PBXNativeTarget "AI Insurance Watch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				52AF94AC2DE9B6EF00F1DBF6 /* Debug */,
+				52AF94AD2DE9B6EF00F1DBF6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		DDCA34E12DE6EDF3002837F7 /* Build configuration list for PBXProject "AI Insurance" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
