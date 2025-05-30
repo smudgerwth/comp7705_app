@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<HealthData locale="en_HK">
+    <Record type="HKQuantityTypeIdentifierStepCount"
+            unit="count"
+            value="1500"
+            creationDate="2025-05-29 10:00:00 +0800"
+            startDate="2025-05-29 08:00:00 +0800"
+            endDate="2025-05-29 09:00:00 +0800"/>
+    <Record type="HKQuantityTypeIdentifierStepCount"
+            unit="count"
+            value="2500"
+            creationDate="2025-05-29 14:00:00 +0800"
+            startDate="2025-05-29 12:00:00 +0800"
+            endDate="2025-05-29 13:30:00 +0800"/>
+
+    <Record type="HKQuantityTypeIdentifierHeartRate"
+            unit="count/min"
+            value="75"
+            creationDate="2025-05-29 10:05:00 +0800"
+            startDate="2025-05-29 10:04:00 +0800"
+            endDate="2025-05-29 10:04:30 +0800"/>
+    <Record type="HKQuantityTypeIdentifierHeartRate"
+            unit="count/min"
+            value="85"
+            creationDate="2025-05-29 14:05:00 +0800"
+            startDate="2025-05-29 14:04:00 +0800"
+            endDate="2025-05-29 14:04:30 +0800"/>
+
+    <Record type="HKQuantityTypeIdentifierRestingHeartRate"
+            unit="count/min"
+            value="60"
+            creationDate="2025-05-29 07:00:00 +0800"
+            startDate="2025-05-29 06:59:00 +0800"
+            endDate="2025-05-29 06:59:30 +0800"/>
+
+    <Record type="HKQuantityTypeIdentifierActiveEnergyBurned"
+            unit="kcal"
+            value="120"
+            creationDate="2025-05-29 09:00:00 +0800"
+            startDate="2025-05-29 08:00:00 +0800"
+            endDate="2025-05-29 09:00:00 +0800"/>
+
+    <Record type="HKQuantityTypeIdentifierBodyMass"
+            unit="kg"
+            value="70.5"
+            creationDate="2025-05-29 07:30:00 +0800"
+            startDate="2025-05-29 07:29:00 +0800"
+            endDate="2025-05-29 07:29:30 +0800"/>
+
+    <Record type="HKQuantityTypeIdentifierBodyMassIndex"
+            unit="count"
+            value="22.5"
+            creationDate="2025-05-29 07:30:00 +0800"
+            startDate="2025-05-29 07:29:00 +0800"
+            endDate="2025-05-29 07:29:30 +0800"/>
+
+    <Record type="HKCategoryTypeIdentifierSleepAnalysis"
+            value="HKCategoryValueSleepAnalysisInBed"
+            creationDate="2025-05-29 07:05:00 +0800"
+            startDate="2025-05-28 23:00:00 +0800"
+            endDate="2025-05-29 07:00:00 +0800"/>
+    <Record type="HKCategoryTypeIdentifierSleepAnalysis"
+            value="HKCategoryValueSleepAnalysisAsleepCore"
+            creationDate="2025-05-29 07:05:00 +0800"
+            startDate="2025-05-28 23:30:00 +0800"
+            endDate="2025-05-29 02:00:00 +0800"/>
+    <Record type="HKCategoryTypeIdentifierSleepAnalysis"
+            value="HKCategoryValueSleepAnalysisAsleepDeep"
+            creationDate="2025-05-29 07:05:00 +0800"
+            startDate="2025-05-29 02:00:00 +0800"
+            endDate="2025-05-29 03:30:00 +0800"/>
+    <Record type="HKCategoryTypeIdentifierSleepAnalysis"
+            value="HKCategoryValueSleepAnalysisAsleepREM"
+            creationDate="2025-05-29 07:05:00 +0800"
+            startDate="2025-05-29 03:30:00 +0800"
+            endDate="2025-05-29 04:30:00 +0800"/>
+    <Record type="HKCategoryTypeIdentifierSleepAnalysis"
+            value="HKCategoryValueSleepAnalysisAsleepCore"
+            creationDate="2025-05-29 07:05:00 +0800"
+            startDate="2025-05-29 04:30:00 +0800"
+            endDate="2025-05-29 06:30:00 +0800"/>
+    <Record type="HKCategoryTypeIdentifierSleepAnalysis"
+            value="HKCategoryValueSleepAnalysisAwake"
+            creationDate="2025-05-29 07:05:00 +0800"
+            startDate="2025-05-29 06:30:00 +0800"
+            endDate="2025-05-29 07:00:00 +0800"/>
+
+</HealthData>

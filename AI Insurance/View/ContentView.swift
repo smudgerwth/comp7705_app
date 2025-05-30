@@ -12,7 +12,7 @@ struct ContentView: View {
     @StateObject private var healthKitManager = HealthKitManager()
     @State private var isSmoker = false
     @State private var showHealthKitError = false
-    @State private var predictedPremium: Double? // Store predicted premium
+    @State private var insurancePrediction: InsurancePrediction?
     @State private var isLoading = false // Loading state for server request
     @State private var serverError: String? // Server error message
     
@@ -55,12 +55,47 @@ struct ContentView: View {
                             Text("Biological Sex: \(healthKitManager.biologicalSex ?? "N/A")")
                             Text("Age: \(healthKitManager.age != nil ? String(healthKitManager.age!) : "N/A")")
                         }
-                        if let premium = predictedPremium {
+                        if let prediction = insurancePrediction {
                             Section(header: Text("Insurance Prediction")) {
-                                Text("Predicted Premium: $\(String(format: "%.2f", premium))")
-                                    .foregroundColor(.green)
+                                VStack(alignment: .leading, spacing: 8) {
+                                    HStack {
+                                        Text("Base Premium:")
+                                        Spacer()
+                                        Text("$\(prediction.base_premium, specifier: "%.2f")")
+                                    }
+                                    
+                                    HStack {
+                                        Text("Health Score:")
+                                        Spacer()
+                                        Text("\(prediction.health_score, specifier: "%.1f")/100")
+                                            .foregroundColor(getHealthScoreColor(prediction.health_score))
+                                    }
+                                    
+                                    HStack {
+                                        Text("Discount Rate:")
+                                        Spacer()
+                                        Text(prediction.discount_rate)
+                                            .foregroundColor(.green)
+                                    }
+                                    
+                                    Divider()
+                                    
+                                    HStack {
+                                        Text("Final Premium:")
+                                            .font(.headline)
+                                        Spacer()
+                                        Text("$\(prediction.final_premium, specifier: "%.2f")")
+                                            .font(.headline)
+                                            .foregroundColor(.green)
+                                    }
+                                    
+                                    Text(prediction.health_assessment)
+                                        .font(.subheadline)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.vertical, 4)
                             }
-                        }
+                                                }
                     }
                     .listStyle(GroupedListStyle())
                 }
@@ -95,24 +130,43 @@ struct ContentView: View {
                     dismissButton: .default(Text("OK"))
                 )
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                if healthKitManager.isAuthorized {
+                    healthKitManager.fetchAllData()
+                }
+            }
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+    
+    private func getHealthScoreColor(_ score: Double) -> Color {
+        switch score {
+        case 90...100: return .green
+        case 75..<90: return Color(red: 0.2, green: 0.8, blue: 0.2)
+        case 60..<75: return .yellow
+        case 40..<60: return .orange
+        default: return .red
         }
     }
     
     private func submitToServer() {
         // Use HealthKit data if available, otherwise defaults
-        let age = healthKitManager.age ?? 30
+        let age = healthKitManager.age ?? 18
         let bmi = healthKitManager.bmi ?? 25.0
         let sexString = healthKitManager.biologicalSex?.lowercased()
         let sex: Int = (sexString == "female") ? 1 : 0 // Default to 1 (female) if unavailable
         let smoker: Int = isSmoker ? 1 : 0
+        let heartRate = healthKitManager.heartRate ?? 70
+        let steps = healthKitManager.stepCount ?? 10000
         
         // Prepare JSON payload
         let payload: [String: Any] = [
             "age": age,
             "bmi": bmi,
             "sex": sex,
-            "smoker": smoker
+            "smoker": smoker,
+            "heartRate": heartRate,
+            "steps": steps
         ]
         
         guard let url = URL(string: "http://127.0.0.1:5050/predict") else {
@@ -134,7 +188,7 @@ struct ContentView: View {
         }
         
         isLoading = true
-        predictedPremium = nil
+        insurancePrediction = nil
         serverError = nil
         
         URLSession.shared.dataTask(with: request) { data, response, error in
@@ -147,28 +201,29 @@ struct ContentView: View {
                     return
                 }
                 
-                guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                    self.serverError = "Server returned an error: \(response.debugDescription)"
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    self.serverError = "Invalid server response"
                     self.showHealthKitError = true
                     return
                 }
                 
+                guard (200...299).contains(httpResponse.statusCode) else {
+                    // ... [keep your existing error handling] ...
+                    return
+                }
+                
                 guard let data = data else {
-                    self.serverError = "No data received from server."
+                    self.serverError = "No data received from server"
                     self.showHealthKitError = true
                     return
                 }
                 
                 do {
-                    if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
-                       let premium = json["predicted_premium"] as? Double {
-                        self.predictedPremium = premium
-                    } else {
-                        self.serverError = "Invalid response format from server."
-                        self.showHealthKitError = true
-                    }
+                    let decoder = JSONDecoder()
+                    let prediction = try decoder.decode(InsurancePrediction.self, from: data)
+                    self.insurancePrediction = prediction
                 } catch {
-                    self.serverError = "Failed to parse server response: \(error.localizedDescription)"
+                    self.serverError = "Failed to parse response: \(error.localizedDescription)"
                     self.showHealthKitError = true
                 }
             }
