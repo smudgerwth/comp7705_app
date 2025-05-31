@@ -159,13 +159,14 @@ struct ContentView: View {
     // Renamed the submit function to reflect it's using APIManager
     private func submitToServerWithAPIManager() {
         // Use HealthKit data if available, otherwise defaults
-        let age = healthKitManager.age ?? 18
-        let bmi = healthKitManager.bmi ?? 25.0
+        let age: Int = healthKitManager.age ?? 18
+        let bmi: Double = healthKitManager.bmi ?? 25.0
         let sexString = healthKitManager.biologicalSex?.lowercased()
         let sex: Int = (sexString == "female") ? 1 : 0 // Default to 0 (male) as per original logic (or 1 for female)
         let smoker: Int = isSmoker ? 1 : 0
-        let heartRate = healthKitManager.heartRate ?? 70.0 // Using Double for consistency with payload if needed
-        let steps = healthKitManager.stepCount ?? 10000.0 // Using Double
+        let heartRate: Double = healthKitManager.heartRate ?? 70.0 // Using Double for consistency with payload if needed
+        let steps: Double = healthKitManager.stepCount ?? 10000.0 // Using Double
+        let sleepHours: Double = healthKitManager.sleepHours ?? 0.0
 
         // Prepare JSON payload
         let payload: [String: Any] = [
@@ -174,7 +175,8 @@ struct ContentView: View {
             "sex": sex,
             "smoker": smoker,
             "heartRate": heartRate,
-            "steps": steps
+            "steps": steps,
+            "sleepHours": sleepHours
         ]
         
         isLoading = true
