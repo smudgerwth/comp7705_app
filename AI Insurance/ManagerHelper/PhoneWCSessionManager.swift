@@ -4,7 +4,6 @@
 //
 //  Created by Chuen on 30/5/2025.
 //
-// PhoneWCSessionManager.swift (for iOS Target)
 import Foundation
 import WatchConnectivity
 

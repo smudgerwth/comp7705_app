@@ -1,3 +1,9 @@
+//
+//  HealthKitManager.swift
+//  AI Insurance
+//
+//  Created by Chuen on 30/5/2025.
+//
 import HealthKit
 import SwiftUI
 import os.log
@@ -5,19 +11,21 @@ import os.log
 class HealthKitManager: ObservableObject {
     private let healthStore = HKHealthStore()
     @Published var isAuthorized = false
-    @Published var stepCount: Double?
-    @Published var heartRate: Double?
-    @Published var restingHeartRate: Double?
-    @Published var activeEnergy: Double?
-    @Published var bodyWeight: Double?
-    @Published var bmi: Double?
-    @Published var sleepHours: Double?
+    @Published var stepCount: Double?           // Monthly average daily steps
+    @Published var heartRate: Double?           // Monthly average heart rate
+    @Published var restingHeartRate: Double?    // Monthly average resting heart rate
+    @Published var activeEnergy: Double?        // Monthly average daily active energy
+    @Published var bodyWeight: Double?          // Will now store monthly average body weight
+    @Published var bmi: Double?                 // Will now store monthly average BMI
+    @Published var sleepHours: Double?          // Monthly average daily sleep
     @Published var biologicalSex: String?
     @Published var age: Int?
     @Published var errorMessage: String?
     
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.example.AIInsurance", category: "HealthKitManager")
-    
+
+    // --- checkAuthorizationStatus() and requestAuthorization() remain the same ---
+    // (Your existing authorization logic from the file you provided)
     func checkAuthorizationStatus() {
         logger.info("Checking HealthKit authorization status")
         
@@ -27,23 +35,22 @@ class HealthKitManager: ObservableObject {
             return
         }
         
-        guard let stepCount = HKObjectType.quantityType(forIdentifier: .stepCount),
-              let heartRate = HKObjectType.quantityType(forIdentifier: .heartRate),
-              let restingHeartRate = HKObjectType.quantityType(forIdentifier: .restingHeartRate),
-              let activeEnergy = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
-              let bodyWeight = HKObjectType.quantityType(forIdentifier: .bodyMass),
-              let bmi = HKObjectType.quantityType(forIdentifier: .bodyMassIndex),
-              let sleepAnalysis = HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
-              let biologicalSex = HKObjectType.characteristicType(forIdentifier: .biologicalSex),
-              let dateOfBirth = HKObjectType.characteristicType(forIdentifier: .dateOfBirth) else {
+        guard let stepCountType = HKObjectType.quantityType(forIdentifier: .stepCount),
+              let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate),
+              let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate),
+              let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
+              let bodyWeightType = HKObjectType.quantityType(forIdentifier: .bodyMass),
+              let bmiType = HKObjectType.quantityType(forIdentifier: .bodyMassIndex),
+              let sleepAnalysisType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
+              let biologicalSexType = HKObjectType.characteristicType(forIdentifier: .biologicalSex),
+              let dateOfBirthType = HKObjectType.characteristicType(forIdentifier: .dateOfBirth) else {
             errorMessage = "One or more HealthKit types are unavailable."
             logger.error("\(self.errorMessage!)")
             return
         }
         
-        let typesToRead: Set = [stepCount, heartRate, restingHeartRate, activeEnergy, bodyWeight, bmi, sleepAnalysis, biologicalSex, dateOfBirth]
+        let typesToRead: Set = [stepCountType, heartRateType, restingHeartRateType, activeEnergyType, bodyWeightType, bmiType, sleepAnalysisType, biologicalSexType, dateOfBirthType]
         
-        // Log authorization status for all types
         var hasAccess = false
         for type in typesToRead {
             let status = healthStore.authorizationStatus(for: type)
@@ -53,10 +60,8 @@ class HealthKitManager: ObservableObject {
             }
         }
         
-        // Fallback: Check if critical data can be fetched
         var fetchedCriticalData = false
         
-        // Check biological sex access
         do {
             _ = try healthStore.biologicalSex()
             fetchedCriticalData = true
@@ -65,7 +70,6 @@ class HealthKitManager: ObservableObject {
             logger.debug("Biological sex not accessible: \(error.localizedDescription)")
         }
         
-        // Check date of birth access
         do {
             _ = try healthStore.dateOfBirthComponents()
             fetchedCriticalData = true
@@ -74,13 +78,12 @@ class HealthKitManager: ObservableObject {
             logger.debug("Date of birth not accessible: \(error.localizedDescription)")
         }
         
-        // Check BMI via sample query
-        if let bmiType = HKObjectType.quantityType(forIdentifier: .bodyMassIndex) {
-            let query = HKSampleQuery(sampleType: bmiType, predicate: nil, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
+        if let bmiSampleType = HKObjectType.quantityType(forIdentifier: .bodyMassIndex) {
+            let query = HKSampleQuery(sampleType: bmiSampleType, predicate: nil, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
                 if let _ = samples?.first as? HKQuantitySample {
                     DispatchQueue.main.async {
                         self.logger.debug("BMI accessible")
-                        self.isAuthorized = true
+                        // self.isAuthorized = true // Direct assignment here might be redundant
                     }
                 }
             }
@@ -88,11 +91,11 @@ class HealthKitManager: ObservableObject {
         }
         
         DispatchQueue.main.async {
-            // Set isAuthorized if any access is confirmed
             self.isAuthorized = hasAccess || fetchedCriticalData
             self.logger.info("HealthKit authorization state: isAuthorized=\(self.isAuthorized)")
-            // Always fetch data to load what's available
-            self.fetchAllData()
+            if self.isAuthorized {
+                self.fetchAllData()
+            }
         }
     }
     
@@ -105,21 +108,21 @@ class HealthKitManager: ObservableObject {
             return
         }
         
-        guard let stepCount = HKObjectType.quantityType(forIdentifier: .stepCount),
-              let heartRate = HKObjectType.quantityType(forIdentifier: .heartRate),
-              let restingHeartRate = HKObjectType.quantityType(forIdentifier: .restingHeartRate),
-              let activeEnergy = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
-              let bodyWeight = HKObjectType.quantityType(forIdentifier: .bodyMass),
-              let bmi = HKObjectType.quantityType(forIdentifier: .bodyMassIndex),
-              let sleepAnalysis = HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
-              let biologicalSex = HKObjectType.characteristicType(forIdentifier: .biologicalSex),
-              let dateOfBirth = HKObjectType.characteristicType(forIdentifier: .dateOfBirth) else {
+        guard let stepCountType = HKObjectType.quantityType(forIdentifier: .stepCount),
+              let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate),
+              let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate),
+              let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
+              let bodyWeightType = HKObjectType.quantityType(forIdentifier: .bodyMass),
+              let bmiType = HKObjectType.quantityType(forIdentifier: .bodyMassIndex),
+              let sleepAnalysisType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis),
+              let biologicalSexType = HKObjectType.characteristicType(forIdentifier: .biologicalSex),
+              let dateOfBirthType = HKObjectType.characteristicType(forIdentifier: .dateOfBirth) else {
             errorMessage = "One or more HealthKit types are unavailable."
             logger.error("\(self.errorMessage!)")
             return
         }
         
-        let typesToRead: Set = [stepCount, heartRate, restingHeartRate, activeEnergy, bodyWeight, bmi, sleepAnalysis, biologicalSex, dateOfBirth]
+        let typesToRead: Set = [stepCountType, heartRateType, restingHeartRateType, activeEnergyType, bodyWeightType, bmiType, sleepAnalysisType, biologicalSexType, dateOfBirthType]
         
         healthStore.requestAuthorization(toShare: nil, read: typesToRead) { success, error in
             DispatchQueue.main.async {
@@ -128,183 +131,190 @@ class HealthKitManager: ObservableObject {
                     self.logger.info("HealthKit authorization granted")
                     self.fetchAllData()
                 } else {
+                    self.isAuthorized = false
                     self.errorMessage = error?.localizedDescription ?? "Authorization failed."
                     self.logger.error("HealthKit authorization failed: \(self.errorMessage!)")
                 }
             }
         }
     }
-    
+
     func fetchAllData() {
-        logger.info("Fetching all HealthKit data")
-        fetchStepCount()
-        fetchHeartRate()
-        fetchRestingHeartRate()
-        fetchActiveEnergy()
-        fetchBodyWeight()
-        fetchBMI()
-        fetchSleepAnalysis()
-        fetchBiologicalSex()
-        fetchAge()
+        logger.info("Fetching all HealthKit data (monthly averages where applicable)")
+        fetchMonthlyAverageStepCount()
+        fetchMonthlyAverageHeartRate()
+        fetchMonthlyAverageRestingHeartRate()
+        fetchMonthlyAverageActiveEnergy()
+        fetchMonthlyAverageBodyWeight()         // Updated call
+        fetchMonthlyAverageBMI()                // Updated call
+        fetchMonthlyAverageSleepAnalysis()
+        fetchBiologicalSex()                    // Characteristic
+        fetchAge()                              // Characteristic
     }
-    
-    private func fetchStepCount() {
-        guard let stepType = HKObjectType.quantityType(forIdentifier: .stepCount) else { return }
-        
+
+    // MARK: - Modified Fetch Methods for Monthly Averages
+
+    private func fetchMonthlyAverageStepCount() {
+        guard let stepType = HKObjectType.quantityType(forIdentifier: .stepCount) else {
+            logger.error("Step count type unavailable.")
+            DispatchQueue.main.async { self.stepCount = nil }
+            return
+        }
+
         let calendar = Calendar.current
         let now = Date()
-        let startOfDay = calendar.startOfDay(for: now)
-        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: now, options: .strictStartDate)
-        
-        let query = HKStatisticsQuery(quantityType: stepType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
+        guard let startDate = calendar.date(byAdding: .day, value: -30, to: now) else {
+            logger.error("Failed to calculate start date for monthly steps.")
+            DispatchQueue.main.async { self.stepCount = nil }
+            return
+        }
+        let anchorDate = calendar.startOfDay(for: startDate)
+        var interval = DateComponents()
+        interval.day = 1
+
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictStartDate)
+
+        let query = HKStatisticsCollectionQuery(quantityType: stepType, quantitySamplePredicate: predicate, options: .cumulativeSum, anchorDate: anchorDate, intervalComponents: interval)
+
+        query.initialResultsHandler = { _, result, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    self.logger.error("Step count query failed: \(error.localizedDescription)")
-                    self.stepCount = nil
-                    return
+                    self.logger.error("Monthly step count collection query failed: \(error.localizedDescription)")
+                    self.stepCount = nil; return
                 }
-                if let sum = result?.sumQuantity() {
-                    self.stepCount = sum.doubleValue(for: HKUnit.count())
-                    self.logger.debug("Step count fetched: \(self.stepCount!)")
-                } else {
-                    self.stepCount = nil
+                guard let result = result else {
+                    self.logger.error("No result for monthly step count collection query.")
+                    self.stepCount = nil; return
                 }
+                var totalStepsOverPeriod = 0.0; var daysWithData = 0
+                result.enumerateStatistics(from: startDate, to: now) { statistics, _ in
+                    if let sum = statistics.sumQuantity() { totalStepsOverPeriod += sum.doubleValue(for: HKUnit.count()); daysWithData += 1 }
+                }
+                if daysWithData > 0 { self.stepCount = totalStepsOverPeriod / Double(daysWithData); self.logger.debug("Monthly average daily step count fetched: \(self.stepCount ?? 0)")
+                } else { self.stepCount = 0; self.logger.debug("No step data found for the last 30 days.") }
             }
         }
         healthStore.execute(query)
     }
     
-    private func fetchHeartRate() {
-        guard let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate) else { return }
-        
-        let query = HKSampleQuery(sampleType: heartRateType, predicate: nil, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
+    private func fetchMonthlyAverageHeartRate() {
+        guard let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate) else {
+            logger.error("Heart rate type unavailable."); DispatchQueue.main.async { self.heartRate = nil }; return }
+        let calendar = Calendar.current; let now = Date()
+        guard let startDate = calendar.date(byAdding: .day, value: -30, to: now) else {
+            logger.error("Failed to calculate start date for monthly heart rate."); DispatchQueue.main.async { self.heartRate = nil }; return }
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictStartDate)
+        let query = HKStatisticsQuery(quantityType: heartRateType, quantitySamplePredicate: predicate, options: .discreteAverage) { _, result, error in
             DispatchQueue.main.async {
-                if let error = error {
-                    self.logger.error("Heart rate query failed: \(error.localizedDescription)")
-                    self.heartRate = nil
-                    return
+                if let error = error { self.logger.error("Monthly average heart rate query failed: \(error.localizedDescription)"); self.heartRate = nil; return }
+                if let averageQuantity = result?.averageQuantity() {
+                    self.heartRate = averageQuantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                    self.logger.debug("Monthly average heart rate fetched: \(self.heartRate ?? 0)")
+                } else { self.heartRate = nil; self.logger.debug("No heart rate data available to average for the last 30 days.") }
+            }
+        }
+        healthStore.execute(query)
+    }
+
+    private func fetchMonthlyAverageRestingHeartRate() {
+        guard let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate) else {
+            logger.error("Resting heart rate type unavailable."); DispatchQueue.main.async { self.restingHeartRate = nil }; return }
+        let calendar = Calendar.current; let now = Date()
+        guard let startDate = calendar.date(byAdding: .day, value: -30, to: now) else {
+            logger.error("Failed to calculate start date for monthly resting heart rate."); DispatchQueue.main.async { self.restingHeartRate = nil }; return }
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictStartDate)
+        let query = HKStatisticsQuery(quantityType: restingHeartRateType, quantitySamplePredicate: predicate, options: .discreteAverage) { _, result, error in
+            DispatchQueue.main.async {
+                if let error = error { self.logger.error("Monthly resting heart rate query failed: \(error.localizedDescription)"); self.restingHeartRate = nil; return }
+                if let averageQuantity = result?.averageQuantity() {
+                    self.restingHeartRate = averageQuantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                    self.logger.debug("Monthly average resting heart rate fetched: \(self.restingHeartRate ?? 0)")
+                } else { self.restingHeartRate = nil; self.logger.debug("No resting heart rate data available to average for the last 30 days.") }
+            }
+        }
+        healthStore.execute(query)
+    }
+
+    private func fetchMonthlyAverageActiveEnergy() {
+        guard let energyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) else {
+            logger.error("Active energy type unavailable."); DispatchQueue.main.async { self.activeEnergy = nil }; return }
+        let calendar = Calendar.current; let now = Date()
+        guard let startDate = calendar.date(byAdding: .day, value: -30, to: now) else {
+            logger.error("Failed to calculate start date for monthly active energy."); DispatchQueue.main.async { self.activeEnergy = nil }; return }
+        let anchorDate = calendar.startOfDay(for: startDate); var interval = DateComponents(); interval.day = 1
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictStartDate)
+        let query = HKStatisticsCollectionQuery(quantityType: energyType, quantitySamplePredicate: predicate, options: .cumulativeSum, anchorDate: anchorDate, intervalComponents: interval)
+        query.initialResultsHandler = { _, result, error in
+            DispatchQueue.main.async {
+                if let error = error { self.logger.error("Monthly active energy collection query failed: \(error.localizedDescription)"); self.activeEnergy = nil; return }
+                guard let result = result else { self.logger.error("No result for monthly active energy collection query."); self.activeEnergy = nil; return }
+                var totalEnergyOverPeriod = 0.0; var daysWithData = 0
+                result.enumerateStatistics(from: startDate, to: now) { statistics, _ in
+                    if let sum = statistics.sumQuantity() { totalEnergyOverPeriod += sum.doubleValue(for: HKUnit.kilocalorie()); daysWithData += 1 }
                 }
-                if let sample = samples?.first as? HKQuantitySample {
-                    self.heartRate = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
-                    self.logger.debug("Heart rate fetched: \(self.heartRate!)")
-                } else {
-                    self.heartRate = nil
-                }
+                if daysWithData > 0 { self.activeEnergy = totalEnergyOverPeriod / Double(daysWithData); self.logger.debug("Monthly average daily active energy fetched: \(self.activeEnergy ?? 0)")
+                } else { self.activeEnergy = 0; self.logger.debug("No active energy data found for the last 30 days.") }
+            }
+        }
+        healthStore.execute(query)
+    }
+
+    // NEW: Method to fetch monthly average Body Weight
+    private func fetchMonthlyAverageBodyWeight() {
+        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
+            logger.error("Body Mass (Weight) type unavailable."); DispatchQueue.main.async { self.bodyWeight = nil }; return }
+        let calendar = Calendar.current; let now = Date()
+        guard let startDate = calendar.date(byAdding: .day, value: -30, to: now) else {
+            logger.error("Failed to calculate start date for monthly body weight."); DispatchQueue.main.async { self.bodyWeight = nil }; return }
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictStartDate)
+        let query = HKStatisticsQuery(quantityType: weightType, quantitySamplePredicate: predicate, options: .discreteAverage) { _, result, error in
+            DispatchQueue.main.async {
+                if let error = error { self.logger.error("Monthly average body weight query failed: \(error.localizedDescription)"); self.bodyWeight = nil; return }
+                if let averageQuantity = result?.averageQuantity() {
+                    self.bodyWeight = averageQuantity.doubleValue(for: HKUnit.gramUnit(with: .kilo)) // Kilograms
+                    self.logger.debug("Monthly average body weight fetched: \(self.bodyWeight ?? 0)")
+                } else { self.bodyWeight = nil; self.logger.debug("No body weight data available to average for the last 30 days.") }
             }
         }
         healthStore.execute(query)
     }
     
-    private func fetchRestingHeartRate() {
-        guard let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate) else { return }
-        
-        let query = HKSampleQuery(sampleType: restingHeartRateType, predicate: nil, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
+    // NEW: Method to fetch monthly average BMI
+    private func fetchMonthlyAverageBMI() {
+        guard let bmiType = HKObjectType.quantityType(forIdentifier: .bodyMassIndex) else {
+            logger.error("BMI type unavailable."); DispatchQueue.main.async { self.bmi = nil }; return }
+        let calendar = Calendar.current; let now = Date()
+        guard let startDate = calendar.date(byAdding: .day, value: -30, to: now) else {
+            logger.error("Failed to calculate start date for monthly BMI."); DispatchQueue.main.async { self.bmi = nil }; return }
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictStartDate)
+        let query = HKStatisticsQuery(quantityType: bmiType, quantitySamplePredicate: predicate, options: .discreteAverage) { _, result, error in
             DispatchQueue.main.async {
-                if let error = error {
-                    self.logger.error("Resting heart rate query failed: \(error.localizedDescription)")
-                    self.restingHeartRate = nil
-                    return
-                }
-                if let sample = samples?.first as? HKQuantitySample {
-                    self.restingHeartRate = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
-                    self.logger.debug("Resting heart rate fetched: \(self.restingHeartRate!)")
-                } else {
-                    self.restingHeartRate = nil
-                }
+                if let error = error { self.logger.error("Monthly average BMI query failed: \(error.localizedDescription)"); self.bmi = nil; return }
+                if let averageQuantity = result?.averageQuantity() {
+                    self.bmi = averageQuantity.doubleValue(for: HKUnit.count()) // BMI is a count
+                    self.logger.debug("Monthly average BMI fetched: \(self.bmi ?? 0)")
+                } else { self.bmi = nil; self.logger.debug("No BMI data available to average for the last 30 days.") }
             }
         }
         healthStore.execute(query)
     }
-    
-    private func fetchActiveEnergy() {
-        guard let energyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) else { return }
-        
-        let calendar = Calendar.current
-        let now = Date()
-        let startOfDay = calendar.startOfDay(for: now)
-        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: now, options: .strictStartDate)
-        
-        let query = HKStatisticsQuery(quantityType: energyType, quantitySamplePredicate: predicate, options: .cumulativeSum) { _, result, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    self.logger.error("Active energy query failed: \(error.localizedDescription)")
-                    self.activeEnergy = nil
-                    return
-                }
-                if let sum = result?.sumQuantity() {
-                    self.activeEnergy = sum.doubleValue(for: HKUnit.kilocalorie())
-                    self.logger.debug("Active energy fetched: \(self.activeEnergy!)")
-                } else {
-                    self.activeEnergy = nil
-                }
-            }
-        }
-        healthStore.execute(query)
-    }
-    
-    private func fetchBodyWeight() {
-        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return }
-        
-        let query = HKSampleQuery(sampleType: weightType, predicate: nil, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    self.logger.error("Body weight query failed: \(error.localizedDescription)")
-                    self.bodyWeight = nil
-                    return
-                }
-                if let sample = samples?.first as? HKQuantitySample {
-                    self.bodyWeight = sample.quantity.doubleValue(for: HKUnit.gramUnit(with: .kilo))
-                    self.logger.debug("Body weight fetched: \(self.bodyWeight!)")
-                } else {
-                    self.bodyWeight = nil
-                }
-            }
-        }
-        healthStore.execute(query)
-    }
-    
-    private func fetchBMI() {
-        guard let bmiType = HKObjectType.quantityType(forIdentifier: .bodyMassIndex) else { return }
-        
-        let query = HKSampleQuery(sampleType: bmiType, predicate: nil, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, samples, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    self.logger.error("BMI query failed: \(error.localizedDescription)")
-                    self.bmi = nil
-                    return
-                }
-                if let sample = samples?.first as? HKQuantitySample {
-                    self.bmi = sample.quantity.doubleValue(for: HKUnit.count())
-                    self.logger.debug("BMI fetched: \(self.bmi!)")
-                } else {
-                    self.bmi = nil
-                }
-            }
-        }
-        healthStore.execute(query)
-    }
-    
-    private func fetchSleepAnalysis() {
-        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return }
-        
-        let calendar = Calendar.current
-        let now = Date()
-        let startOfDay = calendar.date(byAdding: .day, value: -1, to: now)!
-        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: now, options: .strictStartDate)
-        
+
+    private func fetchMonthlyAverageSleepAnalysis() {
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            logger.error("Sleep analysis type unavailable."); DispatchQueue.main.async { self.sleepHours = nil }; return }
+        let calendar = Calendar.current; let now = Date()
+        guard let startDate = calendar.date(byAdding: .day, value: -30, to: now) else {
+            logger.error("Failed to calculate start date for monthly sleep."); DispatchQueue.main.async { self.sleepHours = nil }; return }
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictStartDate)
         let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, error in
             DispatchQueue.main.async {
-                if let error = error {
-                    self.logger.error("Sleep analysis query failed: \(error.localizedDescription)")
-                    self.sleepHours = nil
-                    return
-                }
-                let totalSleepSeconds = samples?.compactMap { sample -> Double? in
-                    guard let sample = sample as? HKCategorySample, sample.value == HKCategoryValueSleepAnalysis.asleep.rawValue else { return nil }
-                    return sample.endDate.timeIntervalSince(sample.startDate)
-                }.reduce(0, +) ?? 0
-                self.sleepHours = totalSleepSeconds / 3600
-                self.logger.debug("Sleep hours fetched: \(self.sleepHours!)")
+                if let error = error { self.logger.error("Monthly sleep analysis query failed: \(error.localizedDescription)"); self.sleepHours = nil; return }
+                guard let sleepSamples = samples as? [HKCategorySample] else { self.sleepHours = nil; self.logger.debug("No sleep samples found for the last 30 days."); return }
+                let asleepSamples = sleepSamples.filter { $0.value == HKCategoryValueSleepAnalysis.asleep.rawValue }
+                if asleepSamples.isEmpty { self.sleepHours = 0; self.logger.debug("No 'asleep' sleep samples found for the last 30 days."); return }
+                let totalSleepDurationInSeconds = asleepSamples.reduce(0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
+                self.sleepHours = (totalSleepDurationInSeconds / 3600) / 30.0
+                self.logger.debug("Monthly average daily sleep hours fetched: \(self.sleepHours ?? 0)")
             }
         }
         healthStore.execute(query)
@@ -312,57 +322,32 @@ class HealthKitManager: ObservableObject {
     
     private func fetchBiologicalSex() {
         do {
-            let biologicalSex = try healthStore.biologicalSex()
+            let biologicalSexObject = try healthStore.biologicalSex()
             DispatchQueue.main.async {
-                switch biologicalSex.biologicalSex {
-                case .notSet: self.biologicalSex = "Not Set"
-                case .female: self.biologicalSex = "Female"
-                case .male: self.biologicalSex = "Male"
-                case .other: self.biologicalSex = "Other"
-                @unknown default: self.biologicalSex = "Unknown"
+                switch biologicalSexObject.biologicalSex {
+                case .notSet: self.biologicalSex = "Not Set"; case .female: self.biologicalSex = "Female"; case .male: self.biologicalSex = "Male"; case .other: self.biologicalSex = "Other"; @unknown default: self.biologicalSex = "Unknown"
                 }
                 self.logger.debug("Biological sex fetched: \(self.biologicalSex ?? "nil")")
             }
-        } catch {
-            DispatchQueue.main.async {
-                self.logger.error("Biological sex query failed: \(error.localizedDescription)")
-                self.biologicalSex = nil
-            }
-        }
+        } catch { DispatchQueue.main.async { self.logger.error("Biological sex query failed: \(error.localizedDescription)"); self.biologicalSex = nil } }
     }
     
     private func fetchAge() {
         do {
-            let dateOfBirth = try healthStore.dateOfBirthComponents()
-            let calendar = Calendar.current
-            let now = Date()
-            if let birthDate = calendar.date(from: dateOfBirth) {
+            let dateOfBirthComponents = try healthStore.dateOfBirthComponents()
+            let calendar = Calendar.current; let now = Date()
+            if let birthDate = calendar.date(from: dateOfBirthComponents) {
                 let ageComponents = calendar.dateComponents([.year], from: birthDate, to: now)
-                DispatchQueue.main.async {
-                    self.age = ageComponents.year
-                    self.logger.debug("Age fetched: \(self.age!)")
-                }
-            } else {
-                DispatchQueue.main.async {
-                    self.age = nil
-                }
-            }
-        } catch {
-            DispatchQueue.main.async {
-                self.logger.error("Date of birth query failed: \(error.localizedDescription)")
-                self.age = nil
-            }
-        }
+                DispatchQueue.main.async { self.age = ageComponents.year; if let age = self.age { self.logger.debug("Age fetched: \(age)") } }
+            } else { DispatchQueue.main.async { self.age = nil; self.logger.debug("Could not calculate birth date from components for age.") } }
+        } catch { DispatchQueue.main.async { self.logger.error("Date of birth query failed for age: \(error.localizedDescription)"); self.age = nil } }
     }
 }
 
 extension HKAuthorizationStatus {
     var description: String {
         switch self {
-        case .notDetermined: return "Not Determined"
-        case .sharingDenied: return "Sharing Denied"
-        case .sharingAuthorized: return "Sharing Authorized"
-        @unknown default: return "Unknown"
+        case .notDetermined: return "Not Determined"; case .sharingDenied: return "Sharing Denied"; case .sharingAuthorized: return "Sharing Authorized"; @unknown default: return "Unknown"
         }
     }
 }

@@ -48,10 +48,10 @@ struct ContentView: View {
                 if healthKitManager.isAuthorized {
                     List {
                         Section(header: Text("Health Data")) {
-                            HealthDataRow(label: "Steps Today", value: healthKitManager.stepCount, unit: "steps", format: "%.0f")
+                            HealthDataRow(label: "Steps", value: healthKitManager.stepCount, unit: "steps", format: "%.0f")
                             HealthDataRow(label: "Heart Rate", value: healthKitManager.heartRate, unit: "bpm", format: "%.0f")
                             HealthDataRow(label: "Resting Heart Rate", value: healthKitManager.restingHeartRate, unit: "bpm", format: "%.0f")
-                            HealthDataRow(label: "Active Energy Today", value: healthKitManager.activeEnergy, unit: "kcal", format: "%.0f")
+                            HealthDataRow(label: "Active Energy", value: healthKitManager.activeEnergy, unit: "kcal", format: "%.0f")
                             HealthDataRow(label: "Body Weight", value: healthKitManager.bodyWeight, unit: "kg", format: "%.1f")
                             HealthDataRow(label: "BMI", value: healthKitManager.bmi, unit: "", format: "%.1f")
                             HealthDataRow(label: "Sleep Last Night", value: healthKitManager.sleepHours, unit: "hours", format: "%.1f")
@@ -194,19 +194,18 @@ struct ContentView: View {
                     self.showHealthKitError = true // Re-use this state to show the alert
                     
                     // For debugging specific API errors:
-                    if let apiErr = error as? APIError {
-                        switch apiErr {
-                        case .decodingFailed(_, let data):
-                            if let data = data, let text = String(data: data, encoding: .utf8) {
-                                print("Decoding failed. Received data: \(text)")
-                            }
-                        case .httpError(_, let data):
-                            if let data = data, let text = String(data: data, encoding: .utf8) {
-                                print("HTTP error. Received data: \(text)")
-                            }
-                        default:
-                            break
+                    
+                    switch error {
+                    case .decodingFailed(_, let data):
+                        if let data = data, let text = String(data: data, encoding: .utf8) {
+                            print("Decoding failed. Received data: \(text)")
                         }
+                    case .httpError(_, let data):
+                        if let data = data, let text = String(data: data, encoding: .utf8) {
+                            print("HTTP error. Received data: \(text)")
+                        }
+                    default:
+                        break
                     }
                 }
             }
