@@ -13,7 +13,6 @@ class HealthKitManager: ObservableObject {
     @Published var isAuthorized = false
     @Published var stepCount: Double?           // Monthly average daily steps
     @Published var heartRate: Double?           // Monthly average heart rate
-    @Published var restingHeartRate: Double?    // Monthly average resting heart rate
     @Published var activeEnergy: Double?        // Monthly average daily active energy
     @Published var bodyWeight: Double?          // Will now store monthly average body weight
     @Published var bmi: Double?                 // Will now store monthly average BMI
@@ -37,7 +36,6 @@ class HealthKitManager: ObservableObject {
         
         guard let stepCountType = HKObjectType.quantityType(forIdentifier: .stepCount),
               let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate),
-              let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate),
               let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
               let bodyWeightType = HKObjectType.quantityType(forIdentifier: .bodyMass),
               let bmiType = HKObjectType.quantityType(forIdentifier: .bodyMassIndex),
@@ -49,7 +47,7 @@ class HealthKitManager: ObservableObject {
             return
         }
         
-        let typesToRead: Set = [stepCountType, heartRateType, restingHeartRateType, activeEnergyType, bodyWeightType, bmiType, sleepAnalysisType, biologicalSexType, dateOfBirthType]
+        let typesToRead: Set = [stepCountType, heartRateType, activeEnergyType, bodyWeightType, bmiType, sleepAnalysisType, biologicalSexType, dateOfBirthType]
         
         var hasAccess = false
         for type in typesToRead {
@@ -110,7 +108,6 @@ class HealthKitManager: ObservableObject {
         
         guard let stepCountType = HKObjectType.quantityType(forIdentifier: .stepCount),
               let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate),
-              let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate),
               let activeEnergyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned),
               let bodyWeightType = HKObjectType.quantityType(forIdentifier: .bodyMass),
               let bmiType = HKObjectType.quantityType(forIdentifier: .bodyMassIndex),
@@ -122,7 +119,7 @@ class HealthKitManager: ObservableObject {
             return
         }
         
-        let typesToRead: Set = [stepCountType, heartRateType, restingHeartRateType, activeEnergyType, bodyWeightType, bmiType, sleepAnalysisType, biologicalSexType, dateOfBirthType]
+        let typesToRead: Set = [stepCountType, heartRateType, activeEnergyType, bodyWeightType, bmiType, sleepAnalysisType, biologicalSexType, dateOfBirthType]
         
         healthStore.requestAuthorization(toShare: nil, read: typesToRead) { success, error in
             DispatchQueue.main.async {
@@ -143,7 +140,6 @@ class HealthKitManager: ObservableObject {
         logger.info("Fetching all HealthKit data (monthly averages where applicable)")
         fetchMonthlyAverageStepCount()
         fetchMonthlyAverageHeartRate()
-        fetchMonthlyAverageRestingHeartRate()
         fetchMonthlyAverageActiveEnergy()
         fetchMonthlyAverageBodyWeight()         // Updated call
         fetchMonthlyAverageBMI()                // Updated call
@@ -216,25 +212,6 @@ class HealthKitManager: ObservableObject {
         healthStore.execute(query)
     }
 
-    private func fetchMonthlyAverageRestingHeartRate() {
-        guard let restingHeartRateType = HKObjectType.quantityType(forIdentifier: .restingHeartRate) else {
-            logger.error("Resting heart rate type unavailable."); DispatchQueue.main.async { self.restingHeartRate = nil }; return }
-        let calendar = Calendar.current; let now = Date()
-        guard let startDate = calendar.date(byAdding: .day, value: -30, to: now) else {
-            logger.error("Failed to calculate start date for monthly resting heart rate."); DispatchQueue.main.async { self.restingHeartRate = nil }; return }
-        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictStartDate)
-        let query = HKStatisticsQuery(quantityType: restingHeartRateType, quantitySamplePredicate: predicate, options: .discreteAverage) { _, result, error in
-            DispatchQueue.main.async {
-                if let error = error { self.logger.error("Monthly resting heart rate query failed: \(error.localizedDescription)"); self.restingHeartRate = nil; return }
-                if let averageQuantity = result?.averageQuantity() {
-                    self.restingHeartRate = averageQuantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
-                    self.logger.debug("Monthly average resting heart rate fetched: \(self.restingHeartRate ?? 0)")
-                } else { self.restingHeartRate = nil; self.logger.debug("No resting heart rate data available to average for the last 30 days.") }
-            }
-        }
-        healthStore.execute(query)
-    }
-
     private func fetchMonthlyAverageActiveEnergy() {
         guard let energyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) else {
             logger.error("Active energy type unavailable."); DispatchQueue.main.async { self.activeEnergy = nil }; return }
@@ -298,23 +275,63 @@ class HealthKitManager: ObservableObject {
         }
         healthStore.execute(query)
     }
-
+    
     private func fetchMonthlyAverageSleepAnalysis() {
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
-            logger.error("Sleep analysis type unavailable."); DispatchQueue.main.async { self.sleepHours = nil }; return }
+            logger.error("Sleep analysis type unavailable."); DispatchQueue.main.async { self.sleepHours = nil }; return
+        }
         let calendar = Calendar.current; let now = Date()
-        guard let startDate = calendar.date(byAdding: .day, value: -30, to: now) else {
-            logger.error("Failed to calculate start date for monthly sleep."); DispatchQueue.main.async { self.sleepHours = nil }; return }
-        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: now, options: .strictStartDate)
-        let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, samples, error in
+        let endDate = calendar.startOfDay(for: now)
+        
+        guard let startDate = calendar.date(byAdding: .day, value: -30, to: endDate) else { // Start 30 days before end of yesterday
+            logger.error("Failed to calculate start date for monthly sleep."); DispatchQueue.main.async { self.sleepHours = nil }; return
+        }
+        
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+
+        let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [NSSortDescriptor(keyPath: \HKSample.startDate, ascending: true)]) { _, samples, error in
             DispatchQueue.main.async {
-                if let error = error { self.logger.error("Monthly sleep analysis query failed: \(error.localizedDescription)"); self.sleepHours = nil; return }
-                guard let sleepSamples = samples as? [HKCategorySample] else { self.sleepHours = nil; self.logger.debug("No sleep samples found for the last 30 days."); return }
-                let asleepSamples = sleepSamples.filter { $0.value == HKCategoryValueSleepAnalysis.asleep.rawValue }
-                if asleepSamples.isEmpty { self.sleepHours = 0; self.logger.debug("No 'asleep' sleep samples found for the last 30 days."); return }
-                let totalSleepDurationInSeconds = asleepSamples.reduce(0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
-                self.sleepHours = (totalSleepDurationInSeconds / 3600) / 30.0
-                self.logger.debug("Monthly average daily sleep hours fetched: \(self.sleepHours ?? 0)")
+                if let error = error {
+                    self.logger.error("Monthly sleep analysis query failed: \(error.localizedDescription)")
+                    self.sleepHours = nil
+                    return
+                }
+
+                guard let sleepSamples = samples as? [HKCategorySample] else {
+                    self.sleepHours = 0 // Or nil, if no samples at all
+                    self.logger.debug("No sleep category samples found for the last 30 days.")
+                    return
+                }
+
+                if sleepSamples.isEmpty {
+                    self.sleepHours = 0 // No actual "asleep" data found after filtering
+                    self.logger.debug("No 'asleep' (Unspecified, Core, Deep, REM) sleep samples found after filtering for the last 30 days.")
+                    return
+                }
+
+                // --- New logic to group by day and calculate daily totals ---
+                var dailySleepTotals: [Date: TimeInterval] = [:] // Key: Start of day, Value: Total sleep in seconds for that day
+
+                for sample in sleepSamples {
+                    let dayOfSampleStart = calendar.startOfDay(for: sample.startDate)
+                    let duration = sample.endDate.timeIntervalSince(sample.startDate)
+                    dailySleepTotals[dayOfSampleStart, default: 0] += duration
+                }
+
+                if dailySleepTotals.isEmpty {
+                    self.sleepHours = 0
+                    self.logger.debug("No days with sleep data found after processing samples.")
+                    return
+                }
+
+                let totalSleepDurationAcrossDaysWithData = dailySleepTotals.values.reduce(0, +)
+                let numberOfDaysWithSleepData = dailySleepTotals.count
+                
+                // Calculate average daily sleep only for days that had sleep data
+                let averageDailySleepHours = (totalSleepDurationAcrossDaysWithData / 3600.0) / Double(numberOfDaysWithSleepData)
+                
+                self.sleepHours = averageDailySleepHours
+                self.logger.debug("Monthly average daily sleep hours (for days with data) fetched: \(self.sleepHours ?? 0), based on \(numberOfDaysWithSleepData) days of data.")
             }
         }
         healthStore.execute(query)
