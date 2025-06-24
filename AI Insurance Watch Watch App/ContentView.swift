@@ -67,28 +67,28 @@ struct ContentView: View {
                                     HStack {
                                         Text("Base Premium:").font(.caption)
                                         Spacer()
-                                        Text("$\(prediction.base_premium, specifier: "%.2f")").font(.caption)
+                                        Text("$\(prediction.basePremium, specifier: "%.2f")").font(.caption)
                                     }
                                     HStack {
                                         Text("Health Score:").font(.caption)
                                         Spacer()
-                                        Text("\(prediction.health_score, specifier: "%.1f")/100").font(.caption)
-                                            .foregroundColor(getHealthScoreColor(prediction.health_score))
+                                        Text("\(prediction.healthScore, specifier: "%.1f")/100").font(.caption)
+                                            .foregroundColor(getHealthScoreColor(prediction.healthScore))
                                     }
                                     HStack {
                                         Text("Discount Rate:").font(.caption)
                                         Spacer()
-                                        Text(prediction.discount_rate).font(.caption)
+                                        Text(prediction.discountRate).font(.caption)
                                             .foregroundColor(.green)
                                     }
                                     Divider()
                                     HStack {
                                         Text("Final Premium:").font(.footnote).bold()
                                         Spacer()
-                                        Text("$\(prediction.final_premium, specifier: "%.2f")").font(.footnote).bold()
+                                        Text("$\(prediction.finalPremium, specifier: "%.2f")").font(.footnote).bold()
                                             .foregroundColor(.green)
                                     }
-                                    Text(prediction.health_assessment)
+                                    Text(prediction.healthAssessment)
                                         .font(.caption2)
                                         .foregroundColor(.secondary)
                                 }

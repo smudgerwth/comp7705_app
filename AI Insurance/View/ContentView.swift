@@ -20,9 +20,10 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
-                Text("AI Insurance")
+                Text("AI Insurance Recommender")
                     .font(.largeTitle)
                     .padding()
+                    .frame(maxWidth: .infinity, alignment: .center)
 
                 if !healthKitManager.isAuthorized {
                     Button(action: {
@@ -34,7 +35,7 @@ struct ContentView: View {
                             self.showHealthKitError = true
                         }
                     }) {
-                        Text("Request HealthKit Permission")
+                        Text("Sync Health Data")
                             .font(.headline)
                             .padding()
                             .frame(maxWidth: .infinity)
@@ -47,15 +48,17 @@ struct ContentView: View {
                 
                 if healthKitManager.isAuthorized {
                     List {
-                        Section(header: Text("Health Data")) {
-                            HealthDataRow(label: "Steps", value: healthKitManager.stepCount, unit: "steps", format: "%.0f")
-                            HealthDataRow(label: "Heart Rate", value: healthKitManager.heartRate, unit: "bpm", format: "%.0f")
-                            HealthDataRow(label: "Active Energy", value: healthKitManager.activeEnergy, unit: "kcal", format: "%.0f")
-                            HealthDataRow(label: "Body Weight", value: healthKitManager.bodyWeight, unit: "kg", format: "%.1f")
-                            HealthDataRow(label: "BMI", value: healthKitManager.bmi, unit: "", format: "%.1f")
-                            HealthDataRow(label: "Sleep", value: healthKitManager.sleepHours, unit: "hours", format: "%.1f")
-                            Text("Biological Sex: \(healthKitManager.biologicalSex ?? "N/A")")
-                            Text("Age: \(healthKitManager.age != nil ? String(healthKitManager.age!) : "N/A")")
+                        if insurancePrediction == nil {
+                            Section(header: Text("Health Data")) {
+                                HealthDataRow(label: "Steps", value: healthKitManager.stepCount, unit: "steps", format: "%.0f")
+                                HealthDataRow(label: "Heart Rate", value: healthKitManager.heartRate, unit: "bpm", format: "%.0f")
+                                HealthDataRow(label: "Active Energy", value: healthKitManager.activeEnergy, unit: "kcal", format: "%.0f")
+                                HealthDataRow(label: "Body Weight", value: healthKitManager.bodyWeight, unit: "kg", format: "%.1f")
+                                HealthDataRow(label: "BMI", value: healthKitManager.bmi, unit: "", format: "%.1f")
+                                HealthDataRow(label: "Sleep", value: healthKitManager.sleepHours, unit: "hours", format: "%.1f")
+                                Text("Biological Sex: \(healthKitManager.biologicalSex ?? "N/A")")
+                                Text("Age: \(healthKitManager.age != nil ? String(healthKitManager.age!) : "N/A")")
+                            }
                         }
                         if let prediction = insurancePrediction {
                             Section(header: Text("Insurance Prediction")) {
@@ -63,20 +66,20 @@ struct ContentView: View {
                                     HStack {
                                         Text("Base Premium:")
                                         Spacer()
-                                        Text("$\(prediction.base_premium, specifier: "%.2f")")
+                                        Text("$\(prediction.basePremium, specifier: "%.2f")")
                                     }
                                     
                                     HStack {
                                         Text("Health Score:")
                                         Spacer()
-                                        Text("\(prediction.health_score, specifier: "%.1f")/100")
-                                            .foregroundColor(getHealthScoreColor(prediction.health_score))
+                                        Text("\(prediction.healthScore, specifier: "%.1f")/100")
+                                            .foregroundColor(getHealthScoreColor(prediction.healthScore))
                                     }
                                     
                                     HStack {
                                         Text("Discount Rate:")
                                         Spacer()
-                                        Text(prediction.discount_rate)
+                                        Text(prediction.discountRate)
                                             .foregroundColor(.green)
                                     }
                                     
@@ -86,14 +89,56 @@ struct ContentView: View {
                                         Text("Final Premium:")
                                             .font(.headline)
                                         Spacer()
-                                        Text("$\(prediction.final_premium, specifier: "%.2f")")
+                                        Text("$\(prediction.finalPremium, specifier: "%.2f")")
                                             .font(.headline)
                                             .foregroundColor(.green)
                                     }
                                     
-                                    Text(prediction.health_assessment)
+                                    Text(prediction.healthAssessment)
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
+                                    
+                                    // Recommendation List
+                                    Divider()
+                                    
+                                    Text("Recommended Plans:")
+                                        .font(.headline)
+                                        .padding(.top, 4)
+                                    
+                                    if prediction.recommendationList.error != nil {
+                                        Text("Error loading recommendations")
+                                            .font(.subheadline)
+                                            .foregroundColor(.red)
+                                    } else if prediction.recommendationList.plans.isEmpty {
+                                        Text("No plans available")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                    } else {
+                                        ForEach(prediction.recommendationList.plans, id: \.certificationNo) { plan in
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(plan.planName)
+                                                    .font(.subheadline)
+                                                    .fontWeight(.semibold)
+                                                
+                                                Text(plan.companyName)
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                                
+                                                HStack {
+                                                    Text("Premium:")
+                                                    Text(String(format: "$%.2f", plan.premium))
+                                                        .foregroundColor(.green)
+                                                }
+                                                .font(.caption)
+                                                
+                                                Link("View Plan Details", destination: URL(string: plan.planDocUrl)!)
+                                                    .font(.caption)
+                                                    .foregroundColor(.blue)
+                                            }
+                                            .padding(.vertical, 4)
+                                            Divider()
+                                        }
+                                    }
                                 }
                                 .padding(.vertical, 4)
                             }
@@ -106,6 +151,10 @@ struct ContentView: View {
                     .padding(.horizontal)
                 
                 Button(action: {
+                    if !healthKitManager.isAuthorized {
+                        // authorize HealthKit if not already done
+                        healthKitManager.requestAuthorization()
+                    }
                     submitToServerWithAPIManager() // Call the refactored method
                 }) {
                     Text(isLoading ? "Submitting..." : "Submit")
@@ -116,7 +165,7 @@ struct ContentView: View {
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
-                .disabled(isLoading || !healthKitManager.isAuthorized) // Also disable if HealthKit not authorized
+                .disabled(isLoading)
                 .padding(.horizontal)
                 
                 Spacer()
