@@ -40,7 +40,7 @@ The application is architected to separate concerns, with dedicated managers for
 * PhoneWCSessionManager.swift: Manages WCSession on the iOS app. Listens for messages from the watch, delegates network requests to the APIManager, and sends the result back.  
 * APIManager.swift: A singleton class on the iOS app that handles all network communication with the backend prediction server.  
 * InsurancePrediction.swift: A Codable data model that represents the JSON structure of the API response, used for easy decoding.  
-* ContentView.swift: The primary SwiftUI view for the watchOS app, displaying all user-facing information and controls.
+* WatchContentView.swift: The primary SwiftUI view for the watchOS app, displaying all user-facing information and controls.
 
 
 ## **Setup and Build**
