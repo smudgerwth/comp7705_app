@@ -8,7 +8,7 @@
 import SwiftUI
 import HealthKit
 
-struct ContentView: View {
+struct WatchContentView: View {
     @StateObject private var healthKitManager = HealthKitManager()
     @StateObject private var wcSessionManager = WatchWCSessionManager.shared // Using the WatchConnectivity manager
 
