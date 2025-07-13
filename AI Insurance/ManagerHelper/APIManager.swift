@@ -78,6 +78,17 @@ class APIManager {
                 completion(.failure(.noData))
                 return
             }
+            
+            // --- Start of new code ---
+            // Print the data as a dictionary for debugging
+            do {
+                if let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                    print("Received dictionary: \(jsonObject)")
+                }
+            } catch {
+                print("Failed to serialize data to dictionary: \(error.localizedDescription)")
+            }
+            // --- End of new code ---
 
             do {
                 let decoder = JSONDecoder()

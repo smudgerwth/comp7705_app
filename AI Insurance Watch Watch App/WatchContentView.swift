@@ -1,5 +1,5 @@
 //
-//  ContentView.swift
+//  WatchContentView.swift
 //  AI Insurance
 //
 //  Created by Chuen on 30/5/2025.
@@ -91,6 +91,48 @@ struct ContentView: View {
                                     Text(prediction.healthAssessment)
                                         .font(.caption2)
                                         .foregroundColor(.secondary)
+                                    
+                                    // Recommendation List
+                                    Divider()
+                                    
+                                    Text("Recommended Plans:")
+                                        .font(.headline)
+                                        .padding(.top, 4)
+                                    
+                                    if prediction.recommendationList.error != nil {
+                                        Text("Error loading recommendations")
+                                            .font(.subheadline)
+                                            .foregroundColor(.red)
+                                    } else if prediction.recommendationList.plans.isEmpty {
+                                        Text("No plans available")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                    } else {
+                                        ForEach(prediction.recommendationList.plans, id: \.certificationNo) { plan in
+                                            VStack(alignment: .leading, spacing: 4) {
+                                                Text(plan.planName)
+                                                    .font(.subheadline)
+                                                    .fontWeight(.semibold)
+                                                
+                                                Text(plan.companyName)
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                                
+                                                HStack {
+                                                    Text("Premium:")
+                                                    Text(String(format: "$%.2f", plan.premium))
+                                                        .foregroundColor(.green)
+                                                }
+                                                .font(.caption)
+                                                
+                                                Link("View Plan Details", destination: URL(string: plan.planDocUrl)!)
+                                                    .font(.caption)
+                                                    .foregroundColor(.blue)
+                                            }
+                                            .padding(.vertical, 4)
+                                            Divider()
+                                        }
+                                    }
                                 }
                                 .padding(5)
                                 .background(Color.gray.opacity(0.1))

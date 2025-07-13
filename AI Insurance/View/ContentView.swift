@@ -48,17 +48,15 @@ struct ContentView: View {
                 
                 if healthKitManager.isAuthorized {
                     List {
-                        if insurancePrediction == nil {
-                            Section(header: Text("Health Data")) {
-                                HealthDataRow(label: "Steps", value: healthKitManager.stepCount, unit: "steps", format: "%.0f")
-                                HealthDataRow(label: "Heart Rate", value: healthKitManager.heartRate, unit: "bpm", format: "%.0f")
-                                HealthDataRow(label: "Active Energy", value: healthKitManager.activeEnergy, unit: "kcal", format: "%.0f")
-                                HealthDataRow(label: "Body Weight", value: healthKitManager.bodyWeight, unit: "kg", format: "%.1f")
-                                HealthDataRow(label: "BMI", value: healthKitManager.bmi, unit: "", format: "%.1f")
-                                HealthDataRow(label: "Sleep", value: healthKitManager.sleepHours, unit: "hours", format: "%.1f")
-                                Text("Biological Sex: \(healthKitManager.biologicalSex ?? "N/A")")
-                                Text("Age: \(healthKitManager.age != nil ? String(healthKitManager.age!) : "N/A")")
-                            }
+                        Section(header: Text("Health Data")) {
+                            HealthDataRow(label: "Steps", value: healthKitManager.stepCount, unit: "steps", format: "%.0f")
+                            HealthDataRow(label: "Heart Rate", value: healthKitManager.heartRate, unit: "bpm", format: "%.0f")
+                            HealthDataRow(label: "Active Energy", value: healthKitManager.activeEnergy, unit: "kcal", format: "%.0f")
+                            HealthDataRow(label: "Body Weight", value: healthKitManager.bodyWeight, unit: "kg", format: "%.1f")
+                            HealthDataRow(label: "BMI", value: healthKitManager.bmi, unit: "", format: "%.1f")
+                            HealthDataRow(label: "Sleep", value: healthKitManager.sleepHours, unit: "hours", format: "%.1f")
+                            Text("Biological Sex: \(healthKitManager.biologicalSex ?? "N/A")")
+                            Text("Age: \(healthKitManager.age != nil ? String(healthKitManager.age!) : "N/A")")
                         }
                         if let prediction = insurancePrediction {
                             Section(header: Text("Insurance Prediction")) {

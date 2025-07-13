@@ -11,7 +11,7 @@ import SwiftUI
 struct AI_Insurance_Watch_Watch_AppApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            WatchContentView()
         }
     }
 }
