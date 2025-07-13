@@ -82,3 +82,8 @@ AI Insurance/
 └── AI Insurance Watch Watch App/  
     ├── AI\_Insurance\_WatchApp.swift \# watchOS App entry point  
     └── WatchWCSessionManager.swift \# (watchOS) Manages watch connectivity  
+
+
+## **License**
+
+This project is licensed under the [MIT License](https://www.google.com/search?q=LICENSE).
