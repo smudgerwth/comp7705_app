@@ -2,7 +2,10 @@
 
 This repository contains the source code for the "AI Insurance" iOS and Apple Watch application. The app securely reads a user's health data via HealthKit, sends it to a backend AI model for analysis, and displays a personalized insurance premium prediction directly on the Apple Watch.
 
-![watch demo](https://github.com/user-attachments/assets/326a1e83-e803-4de7-ba66-c16387360069)
+![watch demo](https://github.com/user-attachments/assets/326a1e83-e803-4de7-ba66-c16387360069) 
+
+ ![Simulator Screen Recording - iPhone 16 Pro Max Paired - 2025-07-13 at 16 28 16](https://github.com/user-attachments/assets/d59663e6-7f91-4bb8-92d2-9275b24518db)
+
 
 ## **Project Overview**
 
