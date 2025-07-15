@@ -1,12 +1,6 @@
-//
-//  ContentView.swift
-//  AI Insurance
-//
-//  Created by Aidan Wong on 28/5/2025.
-//
-
 import SwiftUI
 import HealthKit
+import WebKit
 
 struct ContentView: View {
     @StateObject private var healthKitManager = HealthKitManager()
@@ -128,12 +122,25 @@ struct ContentView: View {
                                                         .foregroundColor(.green)
                                                 }
                                                 .font(.caption)
-                                                
-                                                Link("View Plan Details", destination: URL(string: plan.planDocUrl)!)
-                                                    .font(.caption)
-                                                    .foregroundColor(.blue)
+
+                                                if let url = URL(string: plan.planDocUrl) {
+                                                    Link("View Plan Details", destination: URL(string: plan.planDocUrl)!)
+                                                        .font(.caption)
+                                                        .foregroundColor(.blue)
+                                                    .buttonStyle(PlainButtonStyle()) // Prevent default button styling
+                                                    .accessibilityLabel("View details for \(plan.planName)")
+                                                } else {
+                                                    Text("Plan Details Unavailable")
+                                                        .font(.caption)
+                                                        .foregroundColor(.red)
+                                                }
                                             }
                                             .padding(.vertical, 4)
+                                            // Prevent the entire row from being tappable
+                                            .contentShape(Rectangle())
+                                            .onTapGesture {
+                                                print("Tapped on plan section: \(plan.planName)") // Debug tap
+                                            }
                                             Divider()
                                         }
                                     }
@@ -261,7 +268,18 @@ struct ContentView: View {
     }
 }
 
-// HealthDataRow struct remains the same
+struct PlanDetailView: UIViewRepresentable {
+    let url: URL
+
+    func makeUIView(context: Context) -> WKWebView {
+        let webView = WKWebView()
+        webView.load(URLRequest(url: url))
+        return webView
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
+}
+
 struct HealthDataRow: View {
     let label: String
     let value: Double?
